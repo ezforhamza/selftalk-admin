@@ -31,11 +31,11 @@ export const presetsColors = {
 		darker: "#061B64",
 	},
 	[ThemeColorPresets.Orange]: {
-		lighter: "#FEF4D4",
-		light: "#FED680",
-		default: "#FDA92D",
-		dark: "#B66816",
-		darker: "#793908",
+		lighter: "#FFF8CC",
+		light: "#FFE066",
+		default: "#FFC700",
+		dark: "#CC9F00",
+		darker: "#996600",
 	},
 	[ThemeColorPresets.Red]: {
 		lighter: "#FFE3D5",

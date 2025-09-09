@@ -101,6 +101,17 @@ const DASHBOARD_PERMISSION = {
 		},
 	],
 };
+const NOTIFICATIONS_PERMISSION = {
+	id: "0901673425580519",
+	parentId: "",
+	label: "sys.nav.notifications",
+	name: "Notifications",
+	icon: "solar:bell-bold-duotone",
+	type: PermissionType.MENU,
+	route: "notifications",
+	order: 2,
+	component: "/notifications/index.tsx",
+};
 const MANAGEMENT_PERMISSION = {
 	id: "0901673425580518",
 	parentId: "",
@@ -109,7 +120,7 @@ const MANAGEMENT_PERMISSION = {
 	icon: "local:ic-management",
 	type: PermissionType.CATALOGUE,
 	route: "management",
-	order: 2,
+	order: 3,
 	children: [
 		{
 			id: "2781684678535711",
@@ -205,7 +216,7 @@ const COMPONENTS_PERMISSION = {
 	icon: "solar:widget-5-bold-duotone",
 	type: PermissionType.CATALOGUE,
 	route: "components",
-	order: 3,
+	order: 4,
 	children: [
 		{
 			id: "2478488238255411",
@@ -289,7 +300,7 @@ const FUNCTIONS_PERMISSION = {
 	icon: "solar:plain-2-bold-duotone",
 	type: PermissionType.CATALOGUE,
 	route: "functions",
-	order: 4,
+	order: 5,
 	children: [
 		{
 			id: "3667930780705750",
@@ -319,7 +330,7 @@ const MENU_LEVEL_PERMISSION = {
 	icon: "local:ic-menulevel",
 	type: PermissionType.CATALOGUE,
 	route: "menu-level",
-	order: 5,
+	order: 6,
 	children: [
 		{
 			id: "0144431332471389",
@@ -387,7 +398,7 @@ const ERRORS_PERMISSION = {
 	icon: "bxs:error-alt",
 	type: PermissionType.CATALOGUE,
 	route: "error",
-	order: 6,
+	order: 7,
 	children: [
 		{
 			id: "8557056851997154",
@@ -507,6 +518,7 @@ const OTHERS_PERMISSION = [
 
 export const PERMISSION_LIST = [
 	DASHBOARD_PERMISSION,
+	NOTIFICATIONS_PERMISSION,
 	MANAGEMENT_PERMISSION,
 	COMPONENTS_PERMISSION,
 	FUNCTIONS_PERMISSION,

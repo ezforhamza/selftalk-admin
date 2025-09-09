@@ -1,12 +1,18 @@
 export const FontFamilyPreset = {
 	openSans: "Open Sans Variable",
 	inter: "Inter Variable",
+	poppins: "Poppins",
+	roboto: "Roboto",
+	nunito: "Nunito Sans Variable",
 };
 
 export const typographyTokens = {
 	fontFamily: {
 		openSans: FontFamilyPreset.openSans,
 		inter: FontFamilyPreset.inter,
+		poppins: FontFamilyPreset.poppins,
+		roboto: FontFamilyPreset.roboto,
+		nunito: FontFamilyPreset.nunito,
 	},
 	fontSize: {
 		xs: "12",

@@ -4,8 +4,24 @@ import { Component } from "./utils";
 
 export function getFrontendDashboardRoutes(): RouteObject[] {
 	const frontendDashboardRoutes: RouteObject[] = [
-		{ path: "workbench", element: Component("/pages/dashboard/workbench") },
-		{ path: "analysis", element: Component("/pages/dashboard/analysis") },
+		// Main dashboard route
+		{ index: true, element: <Navigate to="dashboard" replace /> },
+		{ path: "dashboard", element: Component("/pages/dashboard") },
+
+		// Admin panel routes
+		{ path: "users", element: Component("/pages/users") },
+		{ path: "users/:userId", element: Component("/pages/users/detail") },
+		{ path: "packages", element: Component("/pages/packages") },
+		{ path: "notifications", element: Component("/pages/notifications") },
+
+		// Legal documents
+		{ path: "privacy-policy", element: Component("/pages/privacy-policy") },
+		{ path: "terms-conditions", element: Component("/pages/terms-conditions") },
+
+		// FAQ
+		{ path: "faq", element: Component("/pages/faq") },
+
+		// Reusable components showcase (kept for development reference)
 		{
 			path: "components",
 			children: [
@@ -19,38 +35,8 @@ export function getFrontendDashboardRoutes(): RouteObject[] {
 				{ path: "toast", element: Component("/pages/components/toast") },
 			],
 		},
-		{
-			path: "functions",
-			children: [
-				{ index: true, element: <Navigate to="clipboard" replace /> },
-				{ path: "clipboard", element: Component("/pages/functions/clipboard") },
-				{ path: "token_expired", element: Component("/pages/functions/token-expired") },
-			],
-		},
-		{
-			path: "management",
-			children: [
-				{ index: true, element: <Navigate to="user" replace /> },
-				{
-					path: "user",
-					children: [
-						{ index: true, element: <Navigate to="profile" replace /> },
-						{ path: "profile", element: Component("/pages/management/user/profile") },
-						{ path: "account", element: Component("/pages/management/user/account") },
-					],
-				},
-				{
-					path: "system",
-					children: [
-						{ index: true, element: <Navigate to="permission" replace /> },
-						{ path: "permission", element: Component("/pages/management/system/permission") },
-						{ path: "role", element: Component("/pages/management/system/role") },
-						{ path: "user", element: Component("/pages/management/system/user") },
-						{ path: "user/:id", element: Component("/pages/management/system/user/detail") },
-					],
-				},
-			],
-		},
+
+		// Error pages (keeping for error handling)
 		{
 			path: "error",
 			children: [
@@ -60,49 +46,6 @@ export function getFrontendDashboardRoutes(): RouteObject[] {
 				{ path: "500", element: Component("/pages/sys/error/Page500") },
 			],
 		},
-		{
-			path: "menu_level",
-			children: [
-				{ index: true, element: <Navigate to="1a" replace /> },
-				{ path: "1a", element: Component("/pages/menu-level/menu-level-1a") },
-				{
-					path: "1b",
-					children: [
-						{ index: true, element: <Navigate to="2a" replace /> },
-						{ path: "2a", element: Component("/pages/menu-level/menu-level-1b/menu-level-2a") },
-						{
-							path: "2b",
-							children: [
-								{ index: true, element: <Navigate to="3a" replace /> },
-								{ path: "3a", element: Component("/pages/menu-level/menu-level-1b/menu-level-2b/menu-level-3a") },
-								{ path: "3b", element: Component("/pages/menu-level/menu-level-1b/menu-level-2b/menu-level-3b") },
-							],
-						},
-					],
-				},
-			],
-		},
-		{
-			path: "link",
-			children: [
-				{ index: true, element: <Navigate to="iframe" replace /> },
-				{ path: "iframe", element: Component("/pages/sys/others/link/iframe", { src: "https://ant.design/index-cn" }) },
-				{
-					path: "external-link",
-					element: Component("/pages/sys/others/link/external-link", { src: "https://ant.design/index-cn" }),
-				},
-			],
-		},
-		{
-			path: "permission",
-			children: [
-				{ index: true, element: Component("/pages/sys/others/permission") },
-				{ path: "page-test", element: Component("/pages/sys/others/permission/page-test") },
-			],
-		},
-		{ path: "calendar", element: Component("/pages/sys/others/calendar") },
-		{ path: "kanban", element: Component("/pages/sys/others/kanban") },
-		{ path: "blank", element: Component("/pages/sys/others/blank") },
 	];
 	return frontendDashboardRoutes;
 }

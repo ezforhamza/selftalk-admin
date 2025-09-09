@@ -29,33 +29,32 @@ export function NavVerticalLayout({ data, className }: Props) {
 	return (
 		<nav
 			data-slot="slash-layout-nav"
-			className={cn("fixed inset-y-0 left-0 flex-col h-full bg-background border-r border-dashed z-nav transition-[width] duration-300 ease-in-out", className)}
+			className={cn(
+				"fixed inset-y-0 left-0 flex-col h-full bg-background border-r border-dashed z-nav transition-[width] duration-300 ease-in-out",
+				className,
+			)}
 			style={{
 				width: navWidth,
 			}}
 		>
-			<div
-				className={cn("relative flex items-center py-4 px-2 h-[var(--layout-header-height)] ", {
-					"justify-center": themeLayout === ThemeLayout.Mini,
-				})}
-			>
-				<div className="flex items-center justify-center">
-					<Logo />
-					<span
-						className="text-xl font-bold transition-all duration-300 ease-in-out"
-						style={{
-							opacity: themeLayout === ThemeLayout.Mini ? 0 : 1,
-							maxWidth: themeLayout === ThemeLayout.Mini ? 0 : "auto",
-							whiteSpace: "nowrap",
-							marginLeft: themeLayout === ThemeLayout.Mini ? 0 : "8px",
-						}}
-					>
-						{GLOBAL_CONFIG.appName}
-					</span>
+			<div className={cn("relative flex items-center py-4 px-2 h-[var(--layout-header-height)] justify-center")}>
+				<div className="flex items-center justify-center mt-4">
+					<div className="transition-transform duration-300 ease-in-out hover:scale-110 hover:rotate-2">
+						<Logo size={180} />
+					</div>
 				</div>
 
-				<Button variant="outline" size="icon" onClick={handleToggle} className="h-7 w-7 absolute right-0 translate-x-1/2">
-					{themeLayout === ThemeLayout.Mini ? <Icon icon="lucide:arrow-right-to-line" size={12} /> : <Icon icon="lucide:arrow-left-to-line" size={12} />}
+				<Button
+					variant="outline"
+					size="icon"
+					onClick={handleToggle}
+					className="h-7 w-7 absolute right-0 translate-x-1/2"
+				>
+					{themeLayout === ThemeLayout.Mini ? (
+						<Icon icon="lucide:arrow-right-to-line" size={12} />
+					) : (
+						<Icon icon="lucide:arrow-left-to-line" size={12} />
+					)}
 				</Button>
 			</div>
 

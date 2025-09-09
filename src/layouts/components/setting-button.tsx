@@ -289,23 +289,27 @@ export default function SettingButton() {
 							<Text variant="subTitle1">{t("sys.settings.font")}</Text>
 
 							<Text variant="subTitle2">{t("sys.settings.family")}</Text>
-							<div className="flex flex-row gap-3">
+							<div className="grid grid-cols-2 gap-3">
 								{Object.entries(FontFamilyPreset).map(([font, family]) => (
 									<Card
 										key={font}
 										className={cn(
-											"flex h-20 w-full cursor-pointer items-center justify-center text-text-disabled",
-											fontFamily === family && "text-primary font-medium",
+											"flex flex-col h-20 cursor-pointer items-center justify-center text-text-disabled transition-all duration-200",
+											fontFamily === family && "text-primary font-medium border-primary/50 bg-primary/5",
 											family === FontFamilyPreset.inter && "font-inter",
 											family === FontFamilyPreset.openSans && "font-openSans",
+											family === FontFamilyPreset.poppins && "font-sans", // Fallback for Poppins
+											family === FontFamilyPreset.roboto && "font-sans", // Fallback for Roboto
+											family === FontFamilyPreset.nunito && "font-sans", // Fallback for Nunito
 										)}
 										onClick={() => updateSettings({ fontFamily: family })}
 									>
-										<div className="text-center text-lg">
-											<span>A</span>
-											<span className="opacity-50 ml-0.5">a</span>
+										<div className="text-center text-lg mb-1">
+											<span>Aa</span>
 										</div>
-										<span className="text-sm text-text-primary">{family.replace("Variable", "")}</span>
+										<span className="text-xs text-center text-text-primary font-medium">
+											{family.replace(" Variable", "").replace("Sans", "")}
+										</span>
 									</Card>
 								))}
 							</div>

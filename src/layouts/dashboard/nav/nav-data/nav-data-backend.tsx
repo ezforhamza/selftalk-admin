@@ -29,4 +29,16 @@ const convert = (menuTree: MenuTree[]): NavProps["data"] => {
 	}));
 };
 
-export const backendNavData: NavProps["data"] = convert(convertFlatToTree(DB_MENU));
+// Simplified backend nav data - using same structure as frontend
+export const backendNavData: NavProps["data"] = [
+	{
+		name: "Dashboard",
+		items: [
+			{
+				title: "Dashboard",
+				path: "/dashboard",
+				icon: <Icon icon="local:ic-dashboard" size="24" />,
+			},
+		],
+	},
+];
