@@ -1,6 +1,6 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, memo, useCallback } from "react";
 import { useNavigate } from "react-router";
-import { faker } from "@faker-js/faker";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
@@ -9,8 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { ScrollArea } from "@/ui/scroll-area";
 import { Separator } from "@/ui/separator";
 import { toast } from "sonner";
-import { Users, UserCheck, Crown, Euro, Search, Eye, UserX, UserCheck2, Shield, ShieldOff } from "lucide-react";
-import { generateConsistentUsers } from "./shared-user-data";
+import { Users, UserCheck, Crown, Euro, Search, Eye, Shield, ShieldOff } from "lucide-react";
+import adminUsersService from "@/api/services/adminUsersService";
+import type { FrontendUser } from "@/api/services/adminUsersService";
 
 // Mobile-optimized UserCard component
 const UserCard = memo(
@@ -20,10 +21,10 @@ const UserCard = memo(
 		onViewUser,
 		onToggleStatus,
 	}: {
-		user: any;
+		user: FrontendUser;
 		loadingUserId: string | null;
 		onViewUser: (userId: string) => void;
-		onToggleStatus: (userId: string, status: string) => void;
+		onToggleStatus: (userId: string) => void;
 	}) => {
 		return (
 			<Card className="p-4 hover:shadow-sm transition-shadow border border-border/40">
@@ -99,7 +100,7 @@ const UserCard = memo(
 										? "hover:bg-red-50 hover:text-red-600 hover:border-red-200"
 										: "hover:bg-green-50 hover:text-green-600 hover:border-green-200"
 								}`}
-								onClick={() => onToggleStatus(user.id, user.status)}
+								onClick={() => onToggleStatus(user.id)}
 								disabled={loadingUserId === user.id}
 							>
 								{loadingUserId === user.id ? (
@@ -129,11 +130,11 @@ const UserRow = memo(
 		onViewUser,
 		onToggleStatus,
 	}: {
-		user: any;
+		user: FrontendUser;
 		index: number;
 		loadingUserId: string | null;
 		onViewUser: (userId: string) => void;
-		onToggleStatus: (userId: string, status: string) => void;
+		onToggleStatus: (userId: string) => void;
 	}) => {
 		return (
 			<tr className={`border-b hover:bg-muted/50 transition-colors ${index % 2 === 0 ? "bg-muted/20" : ""}`}>
@@ -204,7 +205,7 @@ const UserRow = memo(
 									? "hover:bg-red-50 hover:text-red-600 hover:border-red-200"
 									: "hover:bg-green-50 hover:text-green-600 hover:border-green-200"
 							}`}
-							onClick={() => onToggleStatus(user.id, user.status)}
+							onClick={() => onToggleStatus(user.id)}
 							disabled={loadingUserId === user.id}
 							title={user.status === "Active" ? "Suspend User" : "Activate User"}
 						>
@@ -259,16 +260,28 @@ const getStatusBadgeVariant = (status: string) => {
 	}
 };
 
+// React Query keys
+const QUERY_KEYS = {
+	users: ["users"] as const,
+};
+
 export default function UsersPage() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const [searchTerm, setSearchTerm] = useState("");
-	const [users, setUsers] = useState<any[]>([]);
 	const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
 
-	useEffect(() => {
-		// Generate users on component mount using shared data generator
-		setUsers(generateConsistentUsers(50));
-	}, []);
+	// Fetch users with React Query
+	const {
+		data: usersData,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: QUERY_KEYS.users,
+		queryFn: () => adminUsersService.getUsers(1, 100), // Get first 100 users
+	});
+
+	const users = usersData?.users || [];
 
 	const filteredUsers = users.filter(
 		(user) =>
@@ -276,33 +289,28 @@ export default function UsersPage() {
 			user.email.toLowerCase().includes(searchTerm.toLowerCase()),
 	);
 
-	// Mock API call to toggle user status
-	const toggleUserStatus = useCallback(
-		async (userId: string, currentStatus: string) => {
+	// Toggle user suspension mutation
+	const toggleSuspensionMutation = useMutation({
+		mutationFn: adminUsersService.toggleUserSuspension,
+		onMutate: (userId) => {
 			setLoadingUserId(userId);
-
-			// Simulate API delay
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			setUsers((prevUsers) =>
-				prevUsers.map((user) =>
-					user.id === userId ? { ...user, status: currentStatus === "Active" ? "Suspended" : "Active" } : user,
-				),
-			);
-
-			const newStatus = currentStatus === "Active" ? "Suspended" : "Active";
-			const user = users.find((u) => u.id === userId);
-
-			if (newStatus === "Suspended") {
-				toast.error(`${user?.name} has been suspended`);
+		},
+		onSuccess: (updatedUser) => {
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users });
+			const action = updatedUser.status === "Suspended" ? "suspended" : "activated";
+			if (updatedUser.status === "Suspended") {
+				toast.error(`${updatedUser.name} has been ${action}`);
 			} else {
-				toast.success(`${user?.name} has been activated`);
+				toast.success(`${updatedUser.name} has been ${action}`);
 			}
-
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Failed to update user status");
+		},
+		onSettled: () => {
 			setLoadingUserId(null);
 		},
-		[users],
-	);
+	});
 
 	// Memoized callback functions to prevent unnecessary re-renders
 	const handleViewUser = useCallback(
@@ -312,13 +320,37 @@ export default function UsersPage() {
 		[navigate],
 	);
 
-	const handleToggleStatus = useCallback((userId: string, currentStatus: string) => {
-		toggleUserStatus(userId, currentStatus);
-	}, []);
+	const handleToggleStatus = useCallback((userId: string) => {
+		toggleSuspensionMutation.mutate(userId);
+	}, [toggleSuspensionMutation]);
 
 	const totalRevenue = users
 		.filter((u) => u.subscription && u.subscription.packageSnapshot.price > 0)
 		.reduce((sum, u) => sum + u.subscription.packageSnapshot.price, 0);
+
+	// Show loading state
+	if (isLoading) {
+		return (
+			<div className="flex flex-col h-screen overflow-hidden items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+					<p>Loading users...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Show error state
+	if (error) {
+		return (
+			<div className="flex flex-col h-screen overflow-hidden items-center justify-center">
+				<div className="text-center">
+					<p className="text-red-500 mb-4">Failed to load users</p>
+					<Button onClick={() => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users })}>Try Again</Button>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex flex-col h-screen overflow-hidden">
