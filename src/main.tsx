@@ -13,10 +13,16 @@ import { routesSection } from "./routes/sections";
 import { urlJoin } from "./utils";
 
 await registerLocalIcons();
-await worker.start({
-	onUnhandledRequest: "bypass",
-	serviceWorker: { url: urlJoin(GLOBAL_CONFIG.publicPath, "mockServiceWorker.js") },
-});
+// Check if we should use real API instead of mocks
+const isUsingRealAPI = GLOBAL_CONFIG.apiBaseUrl.includes("selftalk-backend");
+
+if (!isUsingRealAPI) {
+	// Only start MSW if we're not using the real API
+	await worker.start({
+		onUnhandledRequest: "bypass",
+		serviceWorker: { url: urlJoin(GLOBAL_CONFIG.publicPath, "mockServiceWorker.js") },
+	});
+}
 if (GLOBAL_CONFIG.routerMode === "backend") {
 	await menuService.getMenuList();
 }

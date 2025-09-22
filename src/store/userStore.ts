@@ -54,7 +54,7 @@ export const useUserRoles = () => useUserStore((state) => state.userInfo.roles |
 export const useUserActions = () => useUserStore((state) => state.actions);
 
 export const useSignIn = () => {
-	const { setUserToken, setUserInfo } = useUserActions();
+	const { setUserToken, setUserInfo, clearUserInfoAndToken } = useUserActions();
 
 	const signInMutation = useMutation({
 		mutationFn: userService.signin,
@@ -62,8 +62,13 @@ export const useSignIn = () => {
 
 	const signIn = async (data: SignInReq) => {
 		try {
+			// Clear any existing tokens first to ensure fresh login
+			clearUserInfoAndToken();
+
 			const res = await signInMutation.mutateAsync(data);
 			const { user, accessToken, refreshToken } = res;
+
+			// Set new token and user info
 			setUserToken({ accessToken, refreshToken });
 			setUserInfo(user);
 		} catch (err) {

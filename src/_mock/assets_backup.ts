@@ -430,7 +430,7 @@ export const DB_USER: User[] = [
 	{
 		id: "user_admin_id",
 		username: "SelfTalk Admin",
-		password: "demo1234",
+		password: "selftalkadmin",
 		avatar: faker.image.avatarGitHub(),
 		email: "selftalk@admin.com",
 	},
