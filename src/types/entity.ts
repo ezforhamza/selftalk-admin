@@ -90,3 +90,13 @@ export type MenuMetaInfo = Partial<Pick<NavItemDataProps, "path" | "icon" | "cap
 export type MenuTree = Menu & {
 	children?: MenuTree[];
 };
+
+// FAQ related types
+export interface FAQ {
+	_id: string;
+	category: 'General' | 'Account' | 'Billing' | 'Features' | 'Technical';
+	question: string;
+	answer: string;
+	createdAt?: string;
+	updatedAt?: string;
+}

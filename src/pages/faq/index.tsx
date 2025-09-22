@@ -1,77 +1,93 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/ui/button";
 import { Card, CardContent } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Search, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Textarea } from "@/ui/textarea";
-
-interface FAQ {
-	id: number;
-	question: string;
-	answer: string;
-	category: string;
-	isActive: boolean;
-	createdAt: string;
-}
+import faqService, { type CreateFAQReq, type UpdateFAQReq } from "@/api/services/faqService";
+import type { FAQ } from "#/entity";
 
 export default function FAQPage() {
-	const [faqs, setFaqs] = useState<FAQ[]>([]);
-	const [filteredFaqs, setFilteredFaqs] = useState<FAQ[]>([]);
+	const queryClient = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState("All");
-	const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+	const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
 	const [deletingFaq, setDeletingFaq] = useState<FAQ | null>(null);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-	const [formData, setFormData] = useState({
+	const [formData, setFormData] = useState<{
+		question: string;
+		answer: string;
+		category: 'General' | 'Account' | 'Billing' | 'Features' | 'Technical';
+	}>({
 		question: "",
 		answer: "",
 		category: "General",
 	});
 
-	const categories = ["All", "General", "Account", "Billing", "Features", "Technical"];
+	const categories = ["All", "General", "Account", "Billing", "Features", "Technical"] as const;
 
-	useEffect(() => {
-		loadFAQs();
-	}, []);
+	// Fetch FAQs
+	const { data: faqs = [], isLoading } = useQuery({
+		queryKey: ["faqs", selectedCategory === "All" ? undefined : selectedCategory],
+		queryFn: () => faqService.getFAQs(selectedCategory === "All" ? undefined : selectedCategory),
+	});
 
-	useEffect(() => {
-		filterFAQs();
-	}, [faqs, searchQuery, selectedCategory]);
-
-	const loadFAQs = async () => {
-		try {
-			const response = await fetch("/api/faq");
-			if (response.ok) {
-				const data = await response.json();
-				setFaqs(data);
-			}
-		} catch (error) {
-			toast.error("Failed to load FAQs");
-		}
-	};
-
-	const filterFAQs = () => {
-		let filtered = faqs.filter((faq) => faq.isActive);
-
-		if (selectedCategory !== "All") {
-			filtered = filtered.filter((faq) => faq.category === selectedCategory);
-		}
-
+	// Filter FAQs based on search query
+	const filteredFaqs = faqs.filter((faq) => {
 		if (searchQuery) {
-			filtered = filtered.filter(
-				(faq) =>
-					faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					faq.answer.toLowerCase().includes(searchQuery.toLowerCase()),
+			return (
+				faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
 			);
 		}
+		return true;
+	});
 
-		setFilteredFaqs(filtered);
-	};
+	// Create FAQ mutation
+	const createFaqMutation = useMutation({
+		mutationFn: (data: CreateFAQReq) => faqService.createFAQ(data),
+		onSuccess: () => {
+			toast.success("FAQ created successfully");
+			queryClient.invalidateQueries({ queryKey: ["faqs"] });
+			handleDialogClose();
+		},
+		onError: () => {
+			toast.error("Failed to create FAQ");
+		},
+	});
+
+	// Update FAQ mutation
+	const updateFaqMutation = useMutation({
+		mutationFn: ({ id, data }: { id: string; data: UpdateFAQReq }) => faqService.updateFAQ(id, data),
+		onSuccess: () => {
+			toast.success("FAQ updated successfully");
+			queryClient.invalidateQueries({ queryKey: ["faqs"] });
+			handleDialogClose();
+		},
+		onError: () => {
+			toast.error("Failed to update FAQ");
+		},
+	});
+
+	// Delete FAQ mutation
+	const deleteFaqMutation = useMutation({
+		mutationFn: (id: string) => faqService.deleteFAQ(id),
+		onSuccess: () => {
+			toast.success("FAQ deleted successfully");
+			queryClient.invalidateQueries({ queryKey: ["faqs"] });
+			setIsDeleteDialogOpen(false);
+			setDeletingFaq(null);
+		},
+		onError: () => {
+			toast.error("Failed to delete FAQ");
+		},
+	});
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -81,25 +97,13 @@ export default function FAQPage() {
 			return;
 		}
 
-		try {
-			const url = editingFaq ? `/api/faq/${editingFaq.id}` : "/api/faq";
-			const method = editingFaq ? "PUT" : "POST";
-
-			const response = await fetch(url, {
-				method,
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(formData),
+		if (editingFaq) {
+			updateFaqMutation.mutate({
+				id: editingFaq._id,
+				data: formData,
 			});
-
-			if (response.ok) {
-				toast.success(editingFaq ? "FAQ updated successfully" : "FAQ created successfully");
-				setIsCreateDialogOpen(false);
-				setEditingFaq(null);
-				setFormData({ question: "", answer: "", category: "General" });
-				loadFAQs();
-			}
-		} catch (error) {
-			toast.error("Failed to save FAQ");
+		} else {
+			createFaqMutation.mutate(formData);
 		}
 	};
 
@@ -118,23 +122,9 @@ export default function FAQPage() {
 		setIsDeleteDialogOpen(true);
 	};
 
-	const handleDeleteConfirm = async () => {
+	const handleDeleteConfirm = () => {
 		if (!deletingFaq) return;
-
-		try {
-			const response = await fetch(`/api/faq/${deletingFaq.id}`, {
-				method: "DELETE",
-			});
-
-			if (response.ok) {
-				toast.success("FAQ deleted successfully");
-				setIsDeleteDialogOpen(false);
-				setDeletingFaq(null);
-				loadFAQs();
-			}
-		} catch (error) {
-			toast.error("Failed to delete FAQ");
-		}
+		deleteFaqMutation.mutate(deletingFaq._id);
 	};
 
 	const handleDeleteCancel = () => {
@@ -142,7 +132,7 @@ export default function FAQPage() {
 		setDeletingFaq(null);
 	};
 
-	const toggleExpanded = (id: number) => {
+	const toggleExpanded = (id: string) => {
 		const newExpanded = new Set(expandedItems);
 		if (newExpanded.has(id)) {
 			newExpanded.delete(id);
@@ -177,12 +167,14 @@ export default function FAQPage() {
 					<div className="w-full md:w-auto">
 						<Button
 							className="w-full md:w-auto"
-							onClick={() => {
-								console.log("Add FAQ button clicked");
-								setIsCreateDialogOpen(true);
-							}}
+							onClick={() => setIsCreateDialogOpen(true)}
+							disabled={isLoading}
 						>
-							<Plus className="h-4 w-4 mr-2" />
+							{isLoading ? (
+								<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+							) : (
+								<Plus className="h-4 w-4 mr-2" />
+							)}
 							Add FAQ
 						</Button>
 
@@ -197,7 +189,7 @@ export default function FAQPage() {
 										<select
 											id="category"
 											value={formData.category}
-											onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+											onChange={(e) => setFormData({ ...formData, category: e.target.value as 'General' | 'Account' | 'Billing' | 'Features' | 'Technical' })}
 											className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 										>
 											{categories.slice(1).map((category) => (
@@ -232,7 +224,15 @@ export default function FAQPage() {
 										<Button type="button" variant="outline" onClick={handleDialogClose}>
 											Cancel
 										</Button>
-										<Button type="submit">{editingFaq ? "Update FAQ" : "Create FAQ"}</Button>
+										<Button
+											type="submit"
+											disabled={createFaqMutation.isPending || updateFaqMutation.isPending}
+										>
+											{(createFaqMutation.isPending || updateFaqMutation.isPending) && (
+												<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+											)}
+											{editingFaq ? "Update FAQ" : "Create FAQ"}
+										</Button>
 									</div>
 								</form>
 							</DialogContent>
@@ -268,7 +268,14 @@ export default function FAQPage() {
 
 				{/* FAQ List */}
 				<div className="space-y-4">
-					{filteredFaqs.length === 0 ? (
+					{isLoading ? (
+						<Card>
+							<CardContent className="p-12 text-center">
+								<Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+								<p className="text-muted-foreground">Loading FAQs...</p>
+							</CardContent>
+						</Card>
+					) : filteredFaqs.length === 0 ? (
 						<Card>
 							<CardContent className="p-12 text-center">
 								<p className="text-muted-foreground">No FAQs found</p>
@@ -279,12 +286,12 @@ export default function FAQPage() {
 						</Card>
 					) : (
 						filteredFaqs.map((faq) => (
-							<Card key={faq.id}>
+							<Card key={faq._id}>
 								<CardContent className="p-4">
 									<div className="flex items-start justify-between">
 										<div className="flex-1">
-											<div className="flex items-center cursor-pointer group" onClick={() => toggleExpanded(faq.id)}>
-												{expandedItems.has(faq.id) ? (
+											<div className="flex items-center cursor-pointer group" onClick={() => toggleExpanded(faq._id)}>
+												{expandedItems.has(faq._id) ? (
 													<ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" />
 												) : (
 													<ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -299,13 +306,13 @@ export default function FAQPage() {
 												</div>
 											</div>
 
-											{expandedItems.has(faq.id) && (
+											{expandedItems.has(faq._id) && (
 												<div className="mt-4 ml-6 pr-12">
 													<p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
 														{faq.answer}
 													</p>
 													<p className="text-xs text-muted-foreground mt-3">
-														Created: {new Date(faq.createdAt).toLocaleDateString()}
+														Created: {new Date(faq.createdAt || '').toLocaleDateString()}
 													</p>
 												</div>
 											)}
@@ -320,8 +327,13 @@ export default function FAQPage() {
 												size="sm"
 												onClick={() => handleDeleteClick(faq)}
 												className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+												disabled={deleteFaqMutation.isPending}
 											>
-												<Trash2 className="h-4 w-4" />
+												{deleteFaqMutation.isPending && deletingFaq?._id === faq._id ? (
+													<Loader2 className="h-4 w-4 animate-spin" />
+												) : (
+													<Trash2 className="h-4 w-4" />
+												)}
 											</Button>
 										</div>
 									</div>
@@ -352,7 +364,14 @@ export default function FAQPage() {
 							<Button variant="outline" onClick={handleDeleteCancel}>
 								Cancel
 							</Button>
-							<Button variant="destructive" onClick={handleDeleteConfirm}>
+							<Button
+								variant="destructive"
+								onClick={handleDeleteConfirm}
+								disabled={deleteFaqMutation.isPending}
+							>
+								{deleteFaqMutation.isPending && (
+									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+								)}
 								Delete FAQ
 							</Button>
 						</div>
