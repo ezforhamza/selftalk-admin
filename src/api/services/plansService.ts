@@ -39,6 +39,7 @@ export interface UpdatePlanRequest {
 	description?: string;
 	is_popular?: boolean;
 	currency?: string;
+	status?: "Active" | "Inactive";
 }
 
 // API Response structure
@@ -104,6 +105,8 @@ export const transformPackageUpdateToApiRequest = (formData: Partial<PackageForm
 	if (formData.features !== undefined) request.features = formData.features;
 	if (formData.description !== undefined) request.description = formData.description;
 	if (formData.isPopular !== undefined) request.is_popular = formData.isPopular;
+	// Handle isActive -> status conversion
+	if (formData.isActive !== undefined) request.status = formData.isActive ? "Active" : "Inactive";
 
 	return request;
 };

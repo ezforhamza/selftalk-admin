@@ -25,6 +25,7 @@ export default function PackagesPage() {
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [editingPackage, setEditingPackage] = useState<PackageType | null>(null);
 	const [deletingPackage, setDeletingPackage] = useState<PackageType | null>(null);
+	const [updatingPackageId, setUpdatingPackageId] = useState<string | null>(null);
 
 	// Form state
 	const [formData, setFormData] = useState<PackageFormData>({
@@ -74,6 +75,27 @@ export default function PackagesPage() {
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || "Failed to update package");
+		},
+	});
+
+	// Toggle status mutation (separate from update mutation)
+	const toggleStatusMutation = useMutation({
+		mutationFn: ({ id, data }: { id: string; data: Partial<PackageFormData> }) => plansService.updatePlan(id, data),
+		onMutate: ({ id }) => {
+			// Set loading state for specific package
+			setUpdatingPackageId(id);
+		},
+		onSuccess: (updatedPackage) => {
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
+			const action = updatedPackage.isActive ? "enabled" : "disabled";
+			toast.success(`Package ${action} successfully`);
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Failed to update package status");
+		},
+		onSettled: () => {
+			// Clear loading state
+			setUpdatingPackageId(null);
 		},
 	});
 
@@ -138,7 +160,7 @@ export default function PackagesPage() {
 	};
 
 	const toggleStatus = (id: string, currentStatus: boolean) => {
-		updatePlanMutation.mutate({
+		toggleStatusMutation.mutate({
 			id,
 			data: { isActive: !currentStatus },
 		});
@@ -235,7 +257,7 @@ export default function PackagesPage() {
 							onEdit={() => openEditDialog(pkg)}
 							onDelete={() => handleDeleteClick(pkg)}
 							onToggleStatus={() => toggleStatus(pkg.id, pkg.isActive)}
-							loading={updatePlanMutation.isPending}
+							loading={updatingPackageId === pkg.id}
 						/>
 					))}
 				</div>
