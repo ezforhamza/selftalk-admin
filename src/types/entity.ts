@@ -82,7 +82,9 @@ export interface Menu extends CommonOptions, MenuMetaInfo {
 	type: PermissionType;
 }
 
-export type MenuMetaInfo = Partial<Pick<NavItemDataProps, "path" | "icon" | "caption" | "info" | "disabled" | "auth" | "hidden">> & {
+export type MenuMetaInfo = Partial<
+	Pick<NavItemDataProps, "path" | "icon" | "caption" | "info" | "disabled" | "auth" | "hidden">
+> & {
 	externalLink?: URL;
 	component?: string;
 };
@@ -94,9 +96,21 @@ export type MenuTree = Menu & {
 // FAQ related types
 export interface FAQ {
 	_id: string;
-	category: 'General' | 'Account' | 'Billing' | 'Features' | 'Technical';
+	category: "General" | "Account" | "Billing" | "Features" | "Technical";
 	question: string;
 	answer: string;
+	createdAt?: string;
+	updatedAt?: string;
+}
+
+// Legal Document related types
+export interface LegalDocument {
+	_id: string;
+	type: "privacy-policy" | "terms-conditions";
+	title: string;
+	content: string;
+	version: string;
+	isActive: boolean;
 	createdAt?: string;
 	updatedAt?: string;
 }
