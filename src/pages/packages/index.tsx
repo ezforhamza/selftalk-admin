@@ -1,15 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import plansService from "@/api/services/plansService";
 import { Button } from "@/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/ui/dialog";
-import { toast } from "sonner";
-import { Plus } from "lucide-react";
-import { PackageStats } from "./components/package-stats";
+import { DeleteConfirmationDialog } from "./components/delete-confirmation-dialog";
 import { PackageCard } from "./components/package-card";
 import { PackageForm } from "./components/package-form";
-import { DeleteConfirmationDialog } from "./components/delete-confirmation-dialog";
-import plansService from "@/api/services/plansService";
-import type { PackageType, PackageFormData } from "./types";
+import { PackageStats } from "./components/package-stats";
+import type { PackageFormData, PackageType } from "./types";
 
 // React Query keys
 const QUERY_KEYS = {

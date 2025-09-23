@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
-import { faker } from "@faker-js/faker";
+import { Activity, ArrowLeft, Calendar, Clock, Crown, Shield, ShieldOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
-import { Separator } from "@/ui/separator";
-import { ArrowLeft, Calendar, Clock, CreditCard, User, Activity, Crown, Shield, ShieldOff } from "lucide-react";
-import { toast } from "sonner";
 import { generateConsistentUserData } from "./shared-user-data";
 
 export default function UserDetailPage() {
@@ -30,7 +28,7 @@ export default function UserDetailPage() {
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 
 		const newStatus = user.status === "Active" ? "Suspended" : "Active";
-		setUser((prev) => ({ ...prev, status: newStatus }));
+		setUser((prev: any) => ({ ...prev, status: newStatus }));
 
 		if (newStatus === "Suspended") {
 			toast.error(`${user.name} has been suspended`);

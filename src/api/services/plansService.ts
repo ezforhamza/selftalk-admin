@@ -1,5 +1,5 @@
+import type { PackageFormData, PackageType } from "@/pages/packages/types";
 import apiClient from "../apiClient";
-import type { PackageType, PackageFormData } from "@/pages/packages/types";
 
 // API Plan structure (what the backend returns)
 export interface ApiPlan {

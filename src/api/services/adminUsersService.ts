@@ -100,10 +100,23 @@ export enum AdminUsersApi {
 
 // Generate random avatar background colors
 const AVATAR_COLORS = [
-	"#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16",
-	"#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
-	"#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
-	"#ec4899", "#f43f5e"
+	"#ef4444",
+	"#f97316",
+	"#f59e0b",
+	"#eab308",
+	"#84cc16",
+	"#22c55e",
+	"#10b981",
+	"#14b8a6",
+	"#06b6d4",
+	"#0ea5e9",
+	"#3b82f6",
+	"#6366f1",
+	"#8b5cf6",
+	"#a855f7",
+	"#d946ef",
+	"#ec4899",
+	"#f43f5e",
 ];
 
 // Transform API user to frontend user format
@@ -113,9 +126,9 @@ export const transformApiUserToFrontendUser = (apiUser: ApiUser): FrontendUser =
 
 	// Generate avatar with user initials and random color
 	const initials = apiUser.username
-		.split(' ')
-		.map(n => n[0])
-		.join('')
+		.split(" ")
+		.map((n) => n[0])
+		.join("")
 		.toUpperCase()
 		.slice(0, 2);
 
@@ -123,7 +136,8 @@ export const transformApiUserToFrontendUser = (apiUser: ApiUser): FrontendUser =
 	const avatarColor = AVATAR_COLORS[colorIndex];
 
 	// Create avatar URL with initials and background color
-	const avatar = apiUser.profilePicture ||
+	const avatar =
+		apiUser.profilePicture ||
 		`data:image/svg+xml,${encodeURIComponent(`
 			<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
 				<rect width="40" height="40" fill="${avatarColor}"/>
@@ -139,15 +153,18 @@ export const transformApiUserToFrontendUser = (apiUser: ApiUser): FrontendUser =
 	const status = apiUser.is_suspended ? "Suspended" : "Active";
 
 	// Date formatting
-	const joinDate = new Date(apiUser.createdAt).toISOString().split('T')[0];
-	const lastActive = new Date(apiUser.updatedAt).toISOString().split('T')[0];
+	const joinDate = new Date(apiUser.createdAt).toISOString().split("T")[0];
+	const lastActive = new Date(apiUser.updatedAt).toISOString().split("T")[0];
 
 	// Static payment method for now (to be implemented later)
-	const paymentMethod = planPrice > 0 ? {
-		type: "card",
-		last4: "4242",
-		brand: "visa"
-	} : null;
+	const paymentMethod =
+		planPrice > 0
+			? {
+					type: "card",
+					last4: "4242",
+					brand: "visa",
+				}
+			: null;
 
 	// Create subscription data
 	const subscription = {
@@ -160,12 +177,13 @@ export const transformApiUserToFrontendUser = (apiUser: ApiUser): FrontendUser =
 			voiceMinutes: apiUser.total_minutes,
 			billingCycle: apiUser.current_subscription?.billing_period || "monthly",
 		},
-		status: planName === "Free" ? "free" : (status === "Active" ? "active" : "cancelled"),
-		startDate: apiUser.subscription_started_at ?
-			new Date(apiUser.subscription_started_at).toISOString().split('T')[0] : joinDate,
+		status: planName === "Free" ? "free" : status === "Active" ? "active" : "cancelled",
+		startDate: apiUser.subscription_started_at
+			? new Date(apiUser.subscription_started_at).toISOString().split("T")[0]
+			: joinDate,
 		endDate: null, // Will be calculated based on billing cycle later
-		nextBillingDate: planName === "Free" ? null :
-			new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+		nextBillingDate:
+			planName === "Free" ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
 		paymentMethod,
 		autoRenew: planName !== "Free" && status === "Active",
 		createdAt: apiUser.subscription_started_at || apiUser.createdAt,
@@ -189,7 +207,10 @@ export const transformApiUserToFrontendUser = (apiUser: ApiUser): FrontendUser =
 };
 
 // API service functions
-const getUsers = async (page: number = 1, limit: number = 10): Promise<{
+const getUsers = async (
+	page: number = 1,
+	limit: number = 10,
+): Promise<{
 	users: FrontendUser[];
 	meta: { total: number; limit: number; totalPages: number; currentPage: number };
 }> => {
@@ -198,18 +219,18 @@ const getUsers = async (page: number = 1, limit: number = 10): Promise<{
 		meta: { total: number; limit: number; totalPages: number; currentPage: number };
 	}>({
 		url: AdminUsersApi.GetUsers,
-		params: { page, limit }
+		params: { page, limit },
 	});
 
 	return {
 		users: response.users.map(transformApiUserToFrontendUser),
-		meta: response.meta
+		meta: response.meta,
 	};
 };
 
 const toggleUserSuspension = async (userId: string): Promise<FrontendUser> => {
 	const response = await apiClient.put<{ user: ApiUser }>({
-		url: `${AdminUsersApi.ToggleSuspension}/${userId}`
+		url: `${AdminUsersApi.ToggleSuspension}/${userId}`,
 	});
 
 	return transformApiUserToFrontendUser(response.user);

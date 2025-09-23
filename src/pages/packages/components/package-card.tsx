@@ -1,8 +1,8 @@
+import { ChevronDown, ChevronUp, Crown, Edit, Gift, Trash2, Zap } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent } from "@/ui/card";
-import { Edit, Trash2, Gift, Zap, Crown, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
 
 interface PackageType {
 	id: string;

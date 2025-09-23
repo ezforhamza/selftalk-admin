@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { Edit, Eye, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import RichTextEditor from "@/components/rich-text-editor";
 import { Button } from "@/ui/button";
 import { Card, CardContent } from "@/ui/card";
-import { toast } from "sonner";
-import { Save, Eye, Edit } from "lucide-react";
-import RichTextEditor from "@/components/rich-text-editor";
 
 interface LegalDocumentEditorProps {
 	title: string;
@@ -13,33 +13,27 @@ interface LegalDocumentEditorProps {
 	onLoad: () => Promise<string>;
 }
 
-export default function LegalDocumentEditor({
-	title,
-	documentType,
-	initialContent = "",
-	onSave,
-	onLoad,
-}: LegalDocumentEditorProps) {
+export default function LegalDocumentEditor({ title, initialContent = "", onSave, onLoad }: LegalDocumentEditorProps) {
 	const [content, setContent] = useState(initialContent);
 	const [isEditing, setIsEditing] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [loadingContent, setLoadingContent] = useState(true);
-
-	useEffect(() => {
-		loadContent();
-	}, []);
 
 	const loadContent = async () => {
 		try {
 			setLoadingContent(true);
 			const loadedContent = await onLoad();
 			setContent(loadedContent);
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to load content");
 		} finally {
 			setLoadingContent(false);
 		}
 	};
+
+	useEffect(() => {
+		loadContent();
+	}, []);
 
 	const handleSave = async () => {
 		if (!content.trim()) {
@@ -52,7 +46,7 @@ export default function LegalDocumentEditor({
 			await onSave(content);
 			setIsEditing(false);
 			toast.success(`${title} updated successfully`);
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to save content");
 		} finally {
 			setLoading(false);

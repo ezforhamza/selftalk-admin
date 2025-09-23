@@ -1,15 +1,15 @@
-import apiClient from "../apiClient";
 import type { FAQ } from "#/entity";
+import apiClient from "../apiClient";
 
 // Request types for FAQ operations
 export interface CreateFAQReq {
-	category: 'General' | 'Account' | 'Billing' | 'Features' | 'Technical';
+	category: "General" | "Account" | "Billing" | "Features" | "Technical";
 	question: string;
 	answer: string;
 }
 
 export interface UpdateFAQReq {
-	category?: 'General' | 'Account' | 'Billing' | 'Features' | 'Technical';
+	category?: "General" | "Account" | "Billing" | "Features" | "Technical";
 	question?: string;
 	answer?: string;
 }

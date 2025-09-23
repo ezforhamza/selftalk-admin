@@ -1,15 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, ChevronRight, Edit, Loader2, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { FAQ } from "#/entity";
+import faqService, { type CreateFAQReq, type UpdateFAQReq } from "@/api/services/faqService";
 import { Button } from "@/ui/button";
 import { Card, CardContent } from "@/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/ui/dialog";
-import { toast } from "sonner";
-import { Plus, Edit, Trash2, Search, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Textarea } from "@/ui/textarea";
-import faqService, { type CreateFAQReq, type UpdateFAQReq } from "@/api/services/faqService";
-import type { FAQ } from "#/entity";
 
 export default function FAQPage() {
 	const queryClient = useQueryClient();
@@ -23,7 +23,7 @@ export default function FAQPage() {
 	const [formData, setFormData] = useState<{
 		question: string;
 		answer: string;
-		category: 'General' | 'Account' | 'Billing' | 'Features' | 'Technical';
+		category: "General" | "Account" | "Billing" | "Features" | "Technical";
 	}>({
 		question: "",
 		answer: "",
@@ -165,16 +165,8 @@ export default function FAQPage() {
 						<p className="text-sm text-muted-foreground">Manage frequently asked questions and their answers</p>
 					</div>
 					<div className="w-full md:w-auto">
-						<Button
-							className="w-full md:w-auto"
-							onClick={() => setIsCreateDialogOpen(true)}
-							disabled={isLoading}
-						>
-							{isLoading ? (
-								<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-							) : (
-								<Plus className="h-4 w-4 mr-2" />
-							)}
+						<Button className="w-full md:w-auto" onClick={() => setIsCreateDialogOpen(true)} disabled={isLoading}>
+							{isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
 							Add FAQ
 						</Button>
 
@@ -189,7 +181,12 @@ export default function FAQPage() {
 										<select
 											id="category"
 											value={formData.category}
-											onChange={(e) => setFormData({ ...formData, category: e.target.value as 'General' | 'Account' | 'Billing' | 'Features' | 'Technical' })}
+											onChange={(e) =>
+												setFormData({
+													...formData,
+													category: e.target.value as "General" | "Account" | "Billing" | "Features" | "Technical",
+												})
+											}
 											className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 										>
 											{categories.slice(1).map((category) => (
@@ -224,10 +221,7 @@ export default function FAQPage() {
 										<Button type="button" variant="outline" onClick={handleDialogClose}>
 											Cancel
 										</Button>
-										<Button
-											type="submit"
-											disabled={createFaqMutation.isPending || updateFaqMutation.isPending}
-										>
+										<Button type="submit" disabled={createFaqMutation.isPending || updateFaqMutation.isPending}>
 											{(createFaqMutation.isPending || updateFaqMutation.isPending) && (
 												<Loader2 className="h-4 w-4 mr-2 animate-spin" />
 											)}
@@ -312,7 +306,7 @@ export default function FAQPage() {
 														{faq.answer}
 													</p>
 													<p className="text-xs text-muted-foreground mt-3">
-														Created: {new Date(faq.createdAt || '').toLocaleDateString()}
+														Created: {new Date(faq.createdAt || "").toLocaleDateString()}
 													</p>
 												</div>
 											)}
@@ -364,14 +358,8 @@ export default function FAQPage() {
 							<Button variant="outline" onClick={handleDeleteCancel}>
 								Cancel
 							</Button>
-							<Button
-								variant="destructive"
-								onClick={handleDeleteConfirm}
-								disabled={deleteFaqMutation.isPending}
-							>
-								{deleteFaqMutation.isPending && (
-									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-								)}
+							<Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleteFaqMutation.isPending}>
+								{deleteFaqMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
 								Delete FAQ
 							</Button>
 						</div>

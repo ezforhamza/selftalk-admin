@@ -1,13 +1,12 @@
+import { Edit2, Plus, X } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/ui/button";
+import { Card } from "@/ui/card";
+import { DialogFooter } from "@/ui/dialog";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Textarea } from "@/ui/textarea";
-import { DialogFooter } from "@/ui/dialog";
-import { Card } from "@/ui/card";
-import { Badge } from "@/ui/badge";
-import { useState } from "react";
-import { Plus, X, Edit2 } from "lucide-react";
 
 interface PackageFormData {
 	name: string;

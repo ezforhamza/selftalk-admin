@@ -1,17 +1,17 @@
-import { useState, memo, useCallback } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Crown, Euro, Eye, Search, Shield, ShieldOff, UserCheck, Users } from "lucide-react";
+import { memo, useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { FrontendUser } from "@/api/services/adminUsersService";
+import adminUsersService from "@/api/services/adminUsersService";
+import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { ScrollArea } from "@/ui/scroll-area";
 import { Separator } from "@/ui/separator";
-import { toast } from "sonner";
-import { Users, UserCheck, Crown, Euro, Search, Eye, Shield, ShieldOff } from "lucide-react";
-import adminUsersService from "@/api/services/adminUsersService";
-import type { FrontendUser } from "@/api/services/adminUsersService";
 
 // Mobile-optimized UserCard component
 const UserCard = memo(
@@ -320,9 +320,12 @@ export default function UsersPage() {
 		[navigate],
 	);
 
-	const handleToggleStatus = useCallback((userId: string) => {
-		toggleSuspensionMutation.mutate(userId);
-	}, [toggleSuspensionMutation]);
+	const handleToggleStatus = useCallback(
+		(userId: string) => {
+			toggleSuspensionMutation.mutate(userId);
+		},
+		[toggleSuspensionMutation],
+	);
 
 	const totalRevenue = users
 		.filter((u) => u.subscription && u.subscription.packageSnapshot.price > 0)

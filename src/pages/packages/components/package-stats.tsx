@@ -1,5 +1,5 @@
+import { Crown, Package, Zap } from "lucide-react";
 import { Card } from "@/ui/card";
-import { Package, Zap, Crown } from "lucide-react";
 
 interface PackageStatsProps {
 	packages: any[];

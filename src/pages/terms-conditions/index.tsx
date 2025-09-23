@@ -1,5 +1,5 @@
-import LegalDocumentEditor from "@/pages/legal-documents/components/legal-document-editor";
 import { legalService } from "@/api/services/legalService";
+import LegalDocumentEditor from "@/pages/legal-documents/components/legal-document-editor";
 
 export default function TermsConditionsPage() {
 	const handleSave = async (content: string) => {

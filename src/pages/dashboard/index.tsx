@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { Clock, Crown, TrendingUp, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Badge } from "@/ui/badge";
-import { Users, Crown, Clock, TrendingUp } from "lucide-react";
-import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { generateConsistentUsers } from "../users/shared-user-data";
 
 const subscriptionData = [

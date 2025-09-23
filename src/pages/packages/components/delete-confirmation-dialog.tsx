@@ -1,6 +1,6 @@
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/ui/dialog";
-import { Button } from "@/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { Button } from "@/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/ui/dialog";
 
 interface DeleteConfirmationDialogProps {
 	isOpen: boolean;

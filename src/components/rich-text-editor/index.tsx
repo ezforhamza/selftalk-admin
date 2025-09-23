@@ -1,35 +1,35 @@
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { TextStyle } from "@tiptap/extension-text-style";
+import { Bold } from "@tiptap/extension-bold";
 import { Color } from "@tiptap/extension-color";
-import { TextAlign } from "@tiptap/extension-text-align";
 import { FontFamily } from "@tiptap/extension-font-family";
 import { Heading } from "@tiptap/extension-heading";
-import { Bold } from "@tiptap/extension-bold";
 import { Italic } from "@tiptap/extension-italic";
-import { Underline } from "@tiptap/extension-underline";
-import { Strike } from "@tiptap/extension-strike";
 import { Link } from "@tiptap/extension-link";
-import { Button } from "@/ui/button";
-import { Separator } from "@/ui/separator";
-import { cn } from "@/utils";
+import { Strike } from "@tiptap/extension-strike";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Underline } from "@tiptap/extension-underline";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import {
+	AlignCenter,
+	AlignLeft,
+	AlignRight,
 	Bold as BoldIcon,
-	Italic as ItalicIcon,
-	Underline as UnderlineIcon,
-	Strikethrough,
 	Heading1,
 	Heading2,
 	Heading3,
+	Italic as ItalicIcon,
+	Link as LinkIcon,
 	List,
 	ListOrdered,
-	AlignLeft,
-	AlignCenter,
-	AlignRight,
-	Link as LinkIcon,
-	Undo,
 	Redo,
+	Strikethrough,
+	Underline as UnderlineIcon,
+	Undo,
 } from "lucide-react";
+import { Button } from "@/ui/button";
+import { Separator } from "@/ui/separator";
+import { cn } from "@/utils";
 import "./styles.css";
 
 interface RichTextEditorProps {

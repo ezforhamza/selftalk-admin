@@ -1,16 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
 import { faker } from "@faker-js/faker";
+import { Bell, Calendar, CheckCircle, Eye, Send, Target, Trash2, Users } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
+import { Card, CardContent } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
-import { Textarea } from "@/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
-import { ScrollArea } from "@/ui/scroll-area";
-import { Separator } from "@/ui/separator";
-import { toast } from "sonner";
-import { Send, Users, Bell, Target, Calendar, CheckCircle, XCircle, Eye, Trash2, Plus } from "lucide-react";
+import { Textarea } from "@/ui/textarea";
 
 interface NotificationHistory {
 	id: string;
@@ -195,12 +193,6 @@ export default function NotificationsPage() {
 				return <Users className="h-4 w-4" />;
 		}
 	};
-
-	const sentToday = history.filter((h) => {
-		const today = new Date().toDateString();
-		const sentDate = new Date(h.sentAt).toDateString();
-		return today === sentDate && h.status === "sent";
-	}).length;
 
 	return (
 		<div className="min-h-screen overflow-y-auto">
