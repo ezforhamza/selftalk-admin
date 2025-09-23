@@ -1,60 +1,163 @@
-import { Clock, Crown, TrendingUp, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Clock, Crown, Users } from "lucide-react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import adminUsersService from "@/api/services/adminUsersService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Badge } from "@/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
-import { generateConsistentUsers } from "../users/shared-user-data";
 
-const subscriptionData = [
-	{ name: "Free Users", value: 55, count: 2310 },
-	{ name: "Premium Users", value: 30, count: 1260 },
-	{ name: "Super Users", value: 15, count: 630 },
-];
+const COLORS = ["#10b981", "#f59e0b", "#8b5cf6", "#3b82f6", "#e11d48"];
 
-const usageData = [
-	{ month: "Jan", minutes: 145230 },
-	{ month: "Feb", minutes: 158420 },
-	{ month: "Mar", minutes: 172890 },
-	{ month: "Apr", minutes: 185670 },
-	{ month: "May", minutes: 198340 },
-	{ month: "Jun", minutes: 212580 },
-];
+// Dashboard interfaces
+interface DashboardStats {
+	totalUsers: number;
+	freeUsers: number;
+	premiumUsers: number;
+	superUsers: number;
+	totalMinutes: number;
+}
 
-const COLORS = ["#10b981", "#f59e0b", "#8b5cf6"];
+interface SubscriptionDistribution {
+	name: string;
+	value: number;
+	count: number;
+}
+
+interface TopUser {
+	id: string;
+	name: string;
+	email: string;
+	avatar: string;
+	plan: string;
+	minutesUsed: number;
+	minutesTotal: number;
+}
 
 export default function DashboardPage() {
 	const navigate = useNavigate();
-	const [stats, setStats] = useState({
-		totalUsers: 0,
-		freeUsers: 0,
-		premiumUsers: 0,
-		superUsers: 0,
-		totalMinutes: 0,
+
+	// Fetch users data using React Query (same as users page)
+	const {
+		data: usersData,
+		isLoading,
+		error,
+	} = useQuery({
+		queryKey: ["dashboard-users"],
+		queryFn: () => adminUsersService.getUsers(1, 1000), // Get first 1000 users for dashboard stats
 	});
-	const [topUsers, setTopUsers] = useState<any[]>([]);
 
-	useEffect(() => {
-		const totalUsers = subscriptionData.reduce((sum, item) => sum + item.count, 0);
-		const freeUsers = subscriptionData.find((item) => item.name === "Free Users")?.count || 0;
-		const premiumUsers = subscriptionData.find((item) => item.name === "Premium Users")?.count || 0;
-		const superUsers = subscriptionData.find((item) => item.name === "Super Users")?.count || 0;
-		const totalMinutes = usageData[usageData.length - 1].minutes;
+	const users = usersData?.users || [];
 
-		setStats({
+	// Calculate dashboard data from users
+	const { stats, subscriptionData, topUsers } = useMemo(() => {
+		if (users.length === 0) {
+			return {
+				stats: { totalUsers: 0, freeUsers: 0, premiumUsers: 0, superUsers: 0, totalMinutes: 0 },
+				subscriptionData: [
+					{ name: "Free Users", value: 0, count: 0 },
+					{ name: "Premium Users", value: 0, count: 0 },
+					{ name: "Super Users", value: 0, count: 0 },
+				],
+				topUsers: [],
+			};
+		}
+
+		// Calculate plan distribution
+		const planCounts = users.reduce((acc, user) => {
+			const plan = user.plan || "Free";
+			acc[plan] = (acc[plan] || 0) + 1;
+			return acc;
+		}, {} as Record<string, number>);
+
+		const totalUsers = users.length;
+		const freeUsers = planCounts.Free || 0;
+		const premiumUsers = planCounts.Premium || 0;
+		const superUsers = planCounts.Super || 0;
+
+		// Calculate total minutes used
+		const totalMinutes = users.reduce((sum, user) => sum + user.minutesUsed, 0);
+
+		const calculatedStats: DashboardStats = {
 			totalUsers,
 			freeUsers,
 			premiumUsers,
 			superUsers,
 			totalMinutes,
+		};
+
+		// Subscription distribution
+		const distribution: SubscriptionDistribution[] = [
+			{
+				name: "Free Users",
+				count: freeUsers,
+				value: totalUsers > 0 ? Math.round((freeUsers / totalUsers) * 100) : 0,
+			},
+			{
+				name: "Premium Users",
+				count: premiumUsers,
+				value: totalUsers > 0 ? Math.round((premiumUsers / totalUsers) * 100) : 0,
+			},
+			{
+				name: "Super Users",
+				count: superUsers,
+				value: totalUsers > 0 ? Math.round((superUsers / totalUsers) * 100) : 0,
+			},
+		];
+
+		// Add any other plans
+		Object.keys(planCounts).forEach(planName => {
+			if (!["Free", "Premium", "Super"].includes(planName)) {
+				distribution.push({
+					name: `${planName} Users`,
+					count: planCounts[planName],
+					value: totalUsers > 0 ? Math.round((planCounts[planName] / totalUsers) * 100) : 0,
+				});
+			}
 		});
 
-		// Generate top 5 users by usage
-		const allUsers = generateConsistentUsers(50);
-		const sortedUsers = allUsers.sort((a, b) => b.minutesUsed - a.minutesUsed).slice(0, 5);
-		setTopUsers(sortedUsers);
-	}, []);
+		// Top 5 users by usage
+		const sortedUsers = users
+			.filter(user => user.minutesUsed > 0)
+			.sort((a, b) => b.minutesUsed - a.minutesUsed)
+			.slice(0, 5);
+
+		// If less than 5 users with usage, fill with users who have minutes allocated
+		const remainingSlots = 5 - sortedUsers.length;
+		if (remainingSlots > 0) {
+			const usersWithMinutes = users
+				.filter(user => user.minutesUsed === 0 && user.minutesTotal > 0)
+				.slice(0, remainingSlots);
+			sortedUsers.push(...usersWithMinutes);
+		}
+
+		// If still less than 5, fill with any remaining users
+		const finalRemainingSlots = 5 - sortedUsers.length;
+		if (finalRemainingSlots > 0) {
+			const existingIds = new Set(sortedUsers.map(u => u.id));
+			const anyRemainingUsers = users
+				.filter(user => !existingIds.has(user.id))
+				.slice(0, finalRemainingSlots);
+			sortedUsers.push(...anyRemainingUsers);
+		}
+
+		const topUsersFormatted: TopUser[] = sortedUsers.map(user => ({
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			avatar: user.avatar,
+			plan: user.plan,
+			minutesUsed: user.minutesUsed,
+			minutesTotal: user.minutesTotal,
+		}));
+
+		return {
+			stats: calculatedStats,
+			subscriptionData: distribution,
+			topUsers: topUsersFormatted,
+		};
+	}, [users]);
 
 	const handleUserClick = (userId: string) => {
 		navigate(`/users/${userId}`);
@@ -71,6 +174,49 @@ export default function DashboardPage() {
 		const hours = Math.floor(minutes / 60);
 		return `${hours.toLocaleString()}h`;
 	};
+
+	// Loading state
+	if (isLoading) {
+		return (
+			<div className="min-h-screen overflow-y-auto">
+				<div className="md:hidden p-4 border-b bg-background">
+					<h1 className="text-xl font-semibold">Dashboard</h1>
+				</div>
+				<div className="p-6">
+					<div className="flex items-center justify-center min-h-[400px]">
+						<div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Error state
+	if (error) {
+		return (
+			<div className="min-h-screen overflow-y-auto">
+				<div className="md:hidden p-4 border-b bg-background">
+					<h1 className="text-xl font-semibold">Dashboard</h1>
+				</div>
+				<div className="p-6">
+					<Card>
+						<CardContent className="p-6">
+							<div className="text-center">
+								<p className="text-red-600 mb-4">Failed to load dashboard data. Please try again.</p>
+								<button
+									type="button"
+									onClick={() => window.location.reload()}
+									className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+								>
+									Retry
+								</button>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen overflow-y-auto">
@@ -144,9 +290,8 @@ export default function DashboardPage() {
 					</Card>
 				</div>
 
-				{/* Charts */}
-				<div className="grid gap-6 md:grid-cols-2 mb-6">
-					{/* Subscription Distribution */}
+				{/* Subscription Distribution Chart */}
+				<div className="mb-6">
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-base">User Subscription Distribution</CardTitle>
@@ -164,66 +309,25 @@ export default function DashboardPage() {
 											paddingAngle={2}
 											dataKey="value"
 										>
-											{subscriptionData.map((entry) => (
-												<Cell key={entry.name} fill={COLORS[subscriptionData.indexOf(entry) % COLORS.length]} />
+											{subscriptionData.map((entry, index) => (
+												<Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
 											))}
 										</Pie>
 									</PieChart>
 								</ResponsiveContainer>
 							</div>
-							<div className="flex justify-center space-x-4 mt-4">
-								{subscriptionData.map((entry) => (
+							<div className="flex justify-center flex-wrap gap-4 mt-4">
+								{subscriptionData.map((entry, index) => (
 									<div key={entry.name} className="flex items-center text-sm">
 										<div
 											className="w-3 h-3 rounded-full mr-2"
-											style={{ backgroundColor: COLORS[subscriptionData.indexOf(entry)] }}
+											style={{ backgroundColor: COLORS[index % COLORS.length] }}
 										/>
 										<span className="text-muted-foreground">{entry.name}</span>
 										<span className="ml-1 font-medium">{entry.value}%</span>
+										<span className="ml-1 text-xs text-muted-foreground">({entry.count})</span>
 									</div>
 								))}
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* Usage Trend */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-base">Monthly Usage Trend</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="h-64">
-								<ResponsiveContainer width="100%" height="100%">
-									<AreaChart data={usageData}>
-										<defs>
-											<linearGradient id="colorUsage" x1="0" y1="0" x2="0" y2="1">
-												<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-												<stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-											</linearGradient>
-										</defs>
-										<CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-										<XAxis dataKey="month" axisLine={false} tickLine={false} fontSize={12} fill="#64748b" />
-										<YAxis
-											axisLine={false}
-											tickLine={false}
-											fontSize={12}
-											fill="#64748b"
-											tickFormatter={(value) => `${Math.round(value / 1000)}k`}
-										/>
-										<Area
-											type="monotone"
-											dataKey="minutes"
-											stroke="#3b82f6"
-											fillOpacity={1}
-											fill="url(#colorUsage)"
-											strokeWidth={2}
-										/>
-									</AreaChart>
-								</ResponsiveContainer>
-							</div>
-							<div className="flex items-center justify-center mt-4 text-sm text-muted-foreground">
-								<TrendingUp className="h-4 w-4 mr-2 text-emerald-600" />
-								+12.5% from last month
 							</div>
 						</CardContent>
 					</Card>
@@ -235,66 +339,80 @@ export default function DashboardPage() {
 						<CardTitle className="text-base font-medium">Top Performers</CardTitle>
 					</CardHeader>
 					<CardContent className="p-0">
-						<div className="grid gap-0 md:grid-cols-5">
-							{topUsers.map((user, index) => (
-								<button
-									key={user.id}
-									type="button"
-									onClick={() => handleUserClick(user.id)}
-									className="group flex flex-col items-center p-5 text-center hover:bg-muted/30 transition-colors duration-200 border-r border-border/50 last:border-r-0 focus:outline-none focus:bg-muted/40"
-								>
-									{/* Rank */}
-									<div className="mb-3">
-										<span className={`text-lg font-bold ${getRankColor(index + 1)}`}>#{index + 1}</span>
-									</div>
+						{topUsers.length === 0 ? (
+							<div className="p-8 text-center text-muted-foreground">
+								<p>No users data available</p>
+							</div>
+						) : (
+							<div className="grid gap-0 md:grid-cols-5">
+								{topUsers.map((user, index) => {
+									const usagePercentage = user.minutesTotal > 0
+										? Math.round((user.minutesUsed / user.minutesTotal) * 100)
+										: 0;
 
-									{/* Avatar */}
-									<div className="relative mb-3">
-										<Avatar className="h-12 w-12">
-											<AvatarImage src={user.avatar} alt={user.name} />
-											<AvatarFallback className="text-xs font-medium">
-												{user.name
-													.split(" ")
-													.map((n: string) => n[0])
-													.join("")}
-											</AvatarFallback>
-										</Avatar>
-									</div>
+									return (
+										<button
+											key={user.id}
+											type="button"
+											onClick={() => handleUserClick(user.id)}
+											className="group flex flex-col items-center p-5 text-center hover:bg-muted/30 transition-colors duration-200 border-r border-border/50 last:border-r-0 focus:outline-none focus:bg-muted/40"
+										>
+											{/* Rank */}
+											<div className="mb-3">
+												<span className={`text-lg font-bold ${getRankColor(index + 1)}`}>#{index + 1}</span>
+											</div>
 
-									{/* User Info */}
-									<div className="mb-3 space-y-1">
-										<p className="font-medium text-sm truncate w-full">{user.name}</p>
-										<p className="text-xs text-muted-foreground truncate w-full">{user.email}</p>
-									</div>
+											{/* Avatar */}
+											<div className="relative mb-3">
+												<Avatar className="h-12 w-12">
+													<AvatarImage src={user.avatar} alt={user.name} />
+													<AvatarFallback className="text-xs font-medium">
+														{user.name
+															.split(" ")
+															.map((n: string) => n[0])
+															.join("")
+															.toUpperCase()
+															.slice(0, 2)}
+													</AvatarFallback>
+												</Avatar>
+											</div>
 
-									{/* Plan Badge */}
-									<Badge
-										variant={user.plan === "Free" ? "secondary" : user.plan === "Premium" ? "default" : "destructive"}
-										className="text-xs px-2 py-1 mb-3 font-medium"
-									>
-										{user.plan}
-									</Badge>
+											{/* User Info */}
+											<div className="mb-3 space-y-1">
+												<p className="font-medium text-sm truncate w-full">{user.name}</p>
+												<p className="text-xs text-muted-foreground truncate w-full">{user.email}</p>
+											</div>
 
-									{/* Usage Stats */}
-									<div className="space-y-1 w-full">
-										<p className="text-sm font-semibold">
-											{Math.floor(user.minutesUsed / 60)}h {user.minutesUsed % 60}m
-										</p>
-										<p className="text-xs text-muted-foreground">
-											{Math.round((user.minutesUsed / user.minutesTotal) * 100)}% used
-										</p>
+											{/* Plan Badge */}
+											<Badge
+												variant={user.plan === "Free" ? "secondary" : user.plan === "Premium" ? "default" : "destructive"}
+												className="text-xs px-2 py-1 mb-3 font-medium"
+											>
+												{user.plan}
+											</Badge>
 
-										{/* Clean Progress Bar */}
-										<div className="w-full bg-muted/60 rounded-full h-1 mt-2">
-											<div
-												className="bg-primary h-1 rounded-full transition-all duration-300"
-												style={{ width: `${Math.min((user.minutesUsed / user.minutesTotal) * 100, 100)}%` }}
-											/>
-										</div>
-									</div>
-								</button>
-							))}
-						</div>
+											{/* Usage Stats */}
+											<div className="space-y-1 w-full">
+												<p className="text-sm font-semibold">
+													{Math.floor(user.minutesUsed / 60)}h {user.minutesUsed % 60}m
+												</p>
+												<p className="text-xs text-muted-foreground">
+													{usagePercentage}% used
+												</p>
+
+												{/* Clean Progress Bar */}
+												<div className="w-full bg-muted/60 rounded-full h-1 mt-2">
+													<div
+														className="bg-primary h-1 rounded-full transition-all duration-300"
+														style={{ width: `${Math.min(usagePercentage, 100)}%` }}
+													/>
+												</div>
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>
