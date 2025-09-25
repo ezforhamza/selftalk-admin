@@ -10,6 +10,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 
 const COLORS = ["#10b981", "#f59e0b", "#8b5cf6", "#3b82f6", "#e11d48"];
 
+// Base URL for profile pictures
+const PROFILE_PICTURE_BASE_URL = "https://selftalk-backend-yw3r.onrender.com";
+
+// Avatar background colors for fallbacks
+const AVATAR_COLORS = [
+	"bg-red-500",
+	"bg-orange-500",
+	"bg-amber-500",
+	"bg-yellow-500",
+	"bg-lime-500",
+	"bg-green-500",
+	"bg-emerald-500",
+	"bg-teal-500",
+	"bg-cyan-500",
+	"bg-sky-500",
+	"bg-blue-500",
+	"bg-indigo-500",
+	"bg-violet-500",
+	"bg-purple-500",
+	"bg-fuchsia-500",
+	"bg-pink-500",
+	"bg-rose-500",
+];
+
 // Dashboard interfaces
 interface DashboardStats {
 	totalUsers: number;
@@ -173,6 +197,35 @@ export default function DashboardPage() {
 	const formatMinutes = (minutes: number) => {
 		const hours = Math.floor(minutes / 60);
 		return `${hours.toLocaleString()}h`;
+	};
+
+	// Generate consistent avatar background color based on user ID
+	const getAvatarBgColor = (userId: string) => {
+		let hash = 0;
+		for (let i = 0; i < userId.length; i++) {
+			const char = userId.charCodeAt(i);
+			hash = ((hash << 5) - hash) + char;
+			hash = hash & hash; // Convert to 32bit integer
+		}
+		const index = Math.abs(hash) % AVATAR_COLORS.length;
+		return AVATAR_COLORS[index];
+	};
+
+	// Get complete profile picture URL
+	const getProfilePictureUrl = (avatarPath: string | null | undefined) => {
+		if (!avatarPath || avatarPath.trim() === '') {
+			return '';
+		}
+
+		// If the path already includes the base URL, return as is
+		if (avatarPath.startsWith('http')) {
+			return avatarPath;
+		}
+
+		// Remove leading slash if present to avoid double slashes
+		const cleanPath = avatarPath.startsWith('/') ? avatarPath.slice(1) : avatarPath;
+
+		return `${PROFILE_PICTURE_BASE_URL}/${cleanPath}`;
 	};
 
 	// Loading state
@@ -365,8 +418,12 @@ export default function DashboardPage() {
 											{/* Avatar */}
 											<div className="relative mb-3">
 												<Avatar className="h-12 w-12">
-													<AvatarImage src={user.avatar} alt={user.name} />
-													<AvatarFallback className="text-xs font-medium">
+													<AvatarImage
+														src={getProfilePictureUrl(user.avatar)}
+														alt={user.name}
+														className="object-cover"
+													/>
+													<AvatarFallback className={`text-xs font-medium text-white ${getAvatarBgColor(user.id)}`}>
 														{user.name
 															.split(" ")
 															.map((n: string) => n[0])

@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { DB_USER } from "@/_mock/assets_backup";
 import type { SignInReq } from "@/api/services/userService";
 import Logo from "@/components/logo";
 import { GLOBAL_CONFIG } from "@/global-config";
@@ -25,8 +24,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
 	const form = useForm<SignInReq>({
 		defaultValues: {
-			email: DB_USER[0].email,
-			password: DB_USER[0].password,
+			email: "",
+			password: "",
 		},
 	});
 
@@ -65,7 +64,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 							<FormItem>
 								<FormLabel>Email</FormLabel>
 								<FormControl>
-									<Input type="email" placeholder={DB_USER.map((user) => user.email).join("/")} {...field} />
+									<Input type="email" placeholder="Enter your email" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -80,7 +79,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 							<FormItem>
 								<FormLabel>{t("sys.login.password")}</FormLabel>
 								<FormControl>
-									<Input type="password" placeholder={DB_USER[0].password} {...field} suppressHydrationWarning />
+									<Input type="password" placeholder="Enter your password" {...field} suppressHydrationWarning />
 								</FormControl>
 								<FormMessage />
 							</FormItem>

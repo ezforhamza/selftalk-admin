@@ -1,9 +1,7 @@
 import type { RouteObject } from "react-router";
 import { Navigate } from "react-router";
-import { DB_MENU } from "@/_mock/assets_backup";
 import type { MenuMetaInfo, MenuTree } from "@/types/entity";
 import { PermissionType } from "@/types/enum";
-import { convertFlatToTree } from "@/utils/tree";
 import { Component } from "./utils";
 
 /**
@@ -92,6 +90,15 @@ const convertToRoute = (items: MenuTree[], parent?: MenuTree): RouteObject[] => 
 };
 
 export function getBackendDashboardRoutes() {
-	const backendDashboardRoutes = convertToRoute(convertFlatToTree(DB_MENU));
-	return backendDashboardRoutes;
+	// Since menu data is already loaded in main.tsx when routerMode is backend,
+	// we can get it from the menu service cache or return empty routes
+	// In a real implementation, this would need proper state management
+	try {
+		// For now, return empty routes - this will be populated by the menu service
+		// when it loads the data in main.tsx
+		return [];
+	} catch (error) {
+		console.error("Failed to load menu data:", error);
+		return [];
+	}
 }

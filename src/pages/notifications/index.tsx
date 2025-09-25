@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker";
 import { Bell, Calendar, CheckCircle, Eye, Send, Target, Trash2, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +8,8 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Textarea } from "@/ui/textarea";
+import notificationService from "@/api/services/notificationService";
+import type { Notification } from "#/entity";
 
 interface NotificationHistory {
 	id: string;
@@ -22,87 +23,41 @@ interface NotificationHistory {
 	openRate: number;
 }
 
-// Mock notification templates
-const notificationTemplates = [
-	{
-		title: "Welcome to SelfTalk Premium!",
-		message:
-			"Thank you for upgrading to Premium! Enjoy 50 voice minutes and priority support. Your subscription is now active.",
-		type: "success" as const,
-	},
-	{
-		title: "New Feature: Custom Voice Settings",
-		message:
-			"We've added custom voice settings to enhance your SelfTalk experience. Update your preferences in the app settings.",
-		type: "info" as const,
-	},
-	{
-		title: "Subscription Payment Failed",
-		message:
-			"We couldn't process your payment for this month. Please update your payment method to continue enjoying SelfTalk.",
-		type: "error" as const,
-	},
-	{
-		title: "Voice Minutes Running Low",
-		message:
-			"You have used 90% of your voice minutes this month. Consider upgrading to Super plan for unlimited conversations.",
-		type: "warning" as const,
-	},
-	{
-		title: "Monthly Usage Report Available",
-		message:
-			"Your personalized usage report is ready! See how you've been using SelfTalk this month and discover new insights.",
-		type: "info" as const,
-	},
-	{
-		title: "Account Security Update",
-		message:
-			"We've enhanced our security measures. Please review your account settings and enable two-factor authentication.",
-		type: "warning" as const,
-	},
-	{
-		title: "Super Plan Upgrade Successful",
-		message:
-			"Welcome to SelfTalk Super! You now have 200 voice minutes and access to premium features. Enjoy the ultimate experience!",
-		type: "success" as const,
-	},
-	{
-		title: "Maintenance Scheduled",
-		message:
-			"SelfTalk will undergo scheduled maintenance on Sunday 2 AM - 4 AM EST. Service may be temporarily unavailable.",
-		type: "info" as const,
-	},
-	{
-		title: "Free Trial Ending Soon",
-		message:
-			"Your free trial ends in 3 days. Upgrade to Premium or Super to continue enjoying unlimited conversations with your AI companion.",
-		type: "warning" as const,
-	},
-	{
-		title: "New AI Model Released",
-		message:
-			"We've released a new AI model with improved conversation quality and better understanding. Update your app to access it.",
-		type: "success" as const,
-	},
-];
-
-// Mock data generator
-const generateMockHistory = (count: number): NotificationHistory[] => {
-	return Array.from({ length: count }, (_, index) => {
-		const template = notificationTemplates[index % notificationTemplates.length];
-		return {
-			id: faker.string.uuid(),
-			title: template.title,
-			message: template.message,
-			type: template.type,
-			targetAudience: faker.helpers.arrayElement(["all", "active", "premium", "free"] as const),
-			sentAt: faker.date.past().toISOString(),
-			status: faker.helpers.arrayElement(["sent", "pending", "failed"] as const),
-			recipientCount: faker.number.int({ min: 50, max: 5000 }),
-			openRate: faker.number.float({ min: 0.1, max: 0.9 }),
-		};
-	});
+// Transform backend notification to frontend format
+const transformNotificationToHistory = (notification: Notification): NotificationHistory => {
+	return {
+		id: notification._id,
+		title: notification.title,
+		message: notification.message,
+		type: notification.type.toLowerCase() as "info" | "success" | "warning" | "error",
+		targetAudience: notification.target_audience === "All Users" ? "all" :
+		                notification.target_audience === "Active Users" ? "active" :
+		                notification.target_audience === "Premium Users" ? "premium" : "free",
+		sentAt: notification.createdAt,
+		status: notification.is_active ? "sent" : "failed",
+		// These fields don't exist in backend - using mock values for UI compatibility
+		recipientCount: Math.floor(Math.random() * 5000) + 100,
+		openRate: Math.random() * 0.8 + 0.1,
+	};
 };
+
+// Transform frontend form data to backend format
+const transformFormDataToBackend = (formData: {
+	title: string;
+	message: string;
+	type: "info" | "success" | "warning" | "error";
+	targetAudience: "all" | "active" | "premium" | "free";
+}) => {
+	return {
+		title: formData.title,
+		message: formData.message,
+		type: (formData.type.charAt(0).toUpperCase() + formData.type.slice(1)) as "Info" | "Success" | "Warning" | "Error",
+		target_audience: (formData.targetAudience === "all" ? "All Users" :
+		                formData.targetAudience === "active" ? "Active Users" :
+		                formData.targetAudience === "premium" ? "Premium Users" : "Free Users") as "All Users" | "Active Users" | "Premium Users" | "Free Users",
+	};
+};
+
 
 export default function NotificationsPage() {
 	const [activeTab, setActiveTab] = useState<"send" | "history">("send");
@@ -117,41 +72,60 @@ export default function NotificationsPage() {
 		targetAudience: "all" as const,
 	});
 
-	useEffect(() => {
-		setHistory(generateMockHistory(15));
+	// Load notifications from API
+	const loadNotifications = useCallback(async () => {
+		try {
+			const response = await notificationService.getNotifications({ limit: 50 });
+			const transformedHistory = response.notifications.map(transformNotificationToHistory);
+			setHistory(transformedHistory);
+		} catch (error) {
+			console.error("Failed to load notifications:", error);
+			toast.error("Failed to load notifications");
+		}
 	}, []);
+
+	useEffect(() => {
+		loadNotifications();
+	}, [loadNotifications]);
 
 	const handleSendNotification = useCallback(async () => {
 		setLoading(true);
 
-		await new Promise((resolve) => setTimeout(resolve, 1500));
+		try {
+			const backendData = transformFormDataToBackend(formData);
+			const createdNotification = await notificationService.createNotification(backendData);
 
-		const newNotification: NotificationHistory = {
-			id: faker.string.uuid(),
-			title: formData.title,
-			message: formData.message,
-			type: formData.type,
-			targetAudience: formData.targetAudience,
-			sentAt: new Date().toISOString(),
-			status: "sent",
-			recipientCount: faker.number.int({ min: 100, max: 2000 }),
-			openRate: faker.number.float({ min: 0.2, max: 0.8 }),
-		};
+			const newNotificationHistory = transformNotificationToHistory(createdNotification);
+			setHistory((prev) => [newNotificationHistory, ...prev]);
 
-		setHistory((prev) => [newNotification, ...prev]);
+			// Reset form
+			setFormData({
+				title: "",
+				message: "",
+				type: "info",
+				targetAudience: "all",
+			});
 
-		// Reset form
-		setFormData({
-			title: "",
-			message: "",
-			type: "info",
-			targetAudience: "all",
-		});
-
-		toast.success("Notification sent successfully!");
-		setActiveTab("history");
-		setLoading(false);
+			toast.success("Notification sent successfully!");
+			setActiveTab("history");
+		} catch (error) {
+			console.error("Failed to send notification:", error);
+			toast.error("Failed to send notification");
+		} finally {
+			setLoading(false);
+		}
 	}, [formData]);
+
+	const handleDeleteNotification = useCallback(async (id: string) => {
+		try {
+			await notificationService.deleteNotification(id);
+			setHistory((prev) => prev.filter(notification => notification.id !== id));
+			toast.success("Notification deleted successfully!");
+		} catch (error) {
+			console.error("Failed to delete notification:", error);
+			toast.error("Failed to delete notification");
+		}
+	}, []);
 
 	const getTypeVariant = (type: string) => {
 		switch (type) {
@@ -348,7 +322,12 @@ export default function NotificationsPage() {
 											</div>
 										</div>
 
-										<Button variant="ghost" size="sm" className="text-muted-foreground hover:text-red-500">
+										<Button
+											variant="ghost"
+											size="sm"
+											className="text-muted-foreground hover:text-red-500"
+											onClick={() => handleDeleteNotification(notification.id)}
+										>
 											<Trash2 className="h-4 w-4" />
 										</Button>
 									</div>

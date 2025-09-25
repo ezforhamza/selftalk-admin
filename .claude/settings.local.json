@@ -4,7 +4,8 @@
       "Bash(pnpm dev:*)",
       "Bash(pnpm tsc:*)",
       "Bash(curl:*)",
-      "Bash(npx biome check:*)"
+      "Bash(npx biome check:*)",
+      "Bash(pnpm lint:*)"
     ],
     "deny": [],
     "ask": []

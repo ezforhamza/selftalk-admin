@@ -114,3 +114,20 @@ export interface LegalDocument {
 	createdAt?: string;
 	updatedAt?: string;
 }
+
+// Notification related types
+export interface Notification {
+	_id: string;
+	title: string;
+	type: "Info" | "Success" | "Warning" | "Error";
+	message: string;
+	target_audience: "All Users" | "Active Users" | "Premium Users" | "Free Users";
+	created_by: {
+		_id: string;
+		username: string;
+		email: string;
+	};
+	is_active: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
